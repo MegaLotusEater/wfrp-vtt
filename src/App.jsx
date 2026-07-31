@@ -6,24 +6,50 @@ import { sendMessageToGM } from './llmService'
 import TabbedSidebar from './TabbedSidebar'
 import CharacterSheet from './CharacterSheet'
 
+const currentScene = {
+  title: 'The Old World',
+  backgroundImageSrc: '/grimdark-hero.png',
+  showScale: false
+};
+
+function readStoredValue(key, fallback) {
+  const storedValue = localStorage.getItem(key);
+
+  if (storedValue === null) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(storedValue);
+  } catch {
+    return storedValue;
+  }
+}
+
+function writeStoredValue(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
 function App() {
-  const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('wfrp-vtt-viewMode') || 'cinematic';
-  });
-  
   const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem('wfrp-vtt-messages');
-    if (savedMessages) return JSON.parse(savedMessages);
+    const savedMessages = readStoredValue('wfrp-vtt-messages', null);
+    if (savedMessages) return savedMessages;
     return [{ id: 1, sender: 'Game Master', text: 'The rain lashes against the cobblestones of Altdorf. You stand before the Black Boar inn. What do you do?', type: 'gm' }];
   });
 
   const [inputText, setInputText] = useState('');
-  const [selectedSkill, setSelectedSkill] = useState('Melee (Basic)');
+  const [selectedSkill, setSelectedSkill] = useState(() => {
+    return readStoredValue('wfrp-vtt-selectedSkill', 'Melee (Basic)');
+  });
   const [isGMDrafting, setIsGMDrafting] = useState(false);
   
   // New state for Foundry-style UI
-  const [isChatOpen, setIsChatOpen] = useState(true);
-  const [isSidebarPanelOpen, setIsSidebarPanelOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(() => {
+    return readStoredValue('wfrp-vtt-isChatOpen', true);
+  });
+  const [isSidebarPanelOpen, setIsSidebarPanelOpen] = useState(() => {
+    return readStoredValue('wfrp-vtt-isSidebarPanelOpen', true);
+  });
   const [openSheetTokenId, setOpenSheetTokenId] = useState(null);
   
   // State for temporary popups when chat is closed
@@ -32,12 +58,20 @@ function App() {
   const chatEndRef = useRef(null);
 
   useEffect(() => {
-    localStorage.setItem('wfrp-vtt-viewMode', viewMode);
-  }, [viewMode]);
+    writeStoredValue('wfrp-vtt-messages', messages);
+  }, [messages]);
 
   useEffect(() => {
-    localStorage.setItem('wfrp-vtt-messages', JSON.stringify(messages));
-  }, [messages]);
+    writeStoredValue('wfrp-vtt-selectedSkill', selectedSkill);
+  }, [selectedSkill]);
+
+  useEffect(() => {
+    writeStoredValue('wfrp-vtt-isChatOpen', isChatOpen);
+  }, [isChatOpen]);
+
+  useEffect(() => {
+    writeStoredValue('wfrp-vtt-isSidebarPanelOpen', isSidebarPanelOpen);
+  }, [isSidebarPanelOpen]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -136,33 +170,17 @@ function App() {
       
       {/* 1. LAYER ZERO: Background Canvas (100vw / 100vh) */}
       <div className="foundry-canvas-layer">
-        {viewMode === 'cinematic' ? (
-          <div className="narrative-image-container full-screen">
-            <img src="https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?q=80&w=2070&auto=format&fit=crop" alt="Grimdark Tavern Scene" />
-            <div className="narrative-overlay">
-              The damp smell of spilled ale and wet fur clings to the air.
-            </div>
-          </div>
-        ) : (
-          <MapCanvas onTokenDoubleClick={(id) => setOpenSheetTokenId(id)} />
-        )}
+        <MapCanvas
+          backgroundImageSrc={currentScene.backgroundImageSrc}
+          showScale={currentScene.showScale}
+          onTokenDoubleClick={(id) => setOpenSheetTokenId(id)}
+        />
       </div>
 
-      {/* 2. TOP LEFT: View Controls */}
-      <nav className="foundry-nav-bar">
-        <button 
-          className={`btn-mode ${viewMode === 'cinematic' ? 'active' : ''}`}
-          onClick={() => setViewMode('cinematic')}
-        >
-          Cinematic
-        </button>
-        <button 
-          className={`btn-mode ${viewMode === 'map' ? 'active' : ''}`}
-          onClick={() => setViewMode('map')}
-        >
-          Map
-        </button>
-      </nav>
+      {/* 2. TOP LEFT: Current Scene */}
+      <header className="scene-title-plaque">
+        <span className="nav-title">{currentScene.title}</span>
+      </header>
 
       {/* Temporary Floating Popup (When Chat is Closed) */}
       {!isChatOpen && popupMessage && (

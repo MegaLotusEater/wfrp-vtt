@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-function MapCanvas({ onTokenDoubleClick }) {
+function MapCanvas({ backgroundImageSrc, showScale = false, onTokenDoubleClick }) {
   const canvasRef = useRef(null);
   
   // Track window size for full-screen canvas
@@ -20,11 +20,11 @@ function MapCanvas({ onTokenDoubleClick }) {
 
   useEffect(() => {
     const img = new Image();
-    img.src = '/blanche_map2.jpg'; // Reference to public folder
+    img.src = backgroundImageSrc;
     img.onload = () => {
       setBgImage(img);
     };
-  }, []);
+  }, [backgroundImageSrc]);
   
   // State for draggable tokens
   const [tokens, setTokens] = useState([
@@ -67,24 +67,26 @@ function MapCanvas({ onTokenDoubleClick }) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 3. Draw Scale Key (Bottom Left, above Chat)
-    ctx.fillStyle = '#111'; // Add a tiny background ribbon for the text so it's readable over complex art
-    ctx.fillRect(10, canvas.height - 70, 180, 50);
+    // 3. Draw Scale Key for scenes that use tactical distance
+    if (showScale) {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(10, canvas.height - 70, 180, 50);
 
-    ctx.fillStyle = '#d4c4a8';
-    ctx.font = '14px "Cinzel", serif';
-    const scaleY = canvas.height - 50;
-    ctx.fillText('Scale: 1 inch = 2 yards', 20, scaleY);
-    ctx.beginPath();
-    ctx.moveTo(20, scaleY + 10);
-    ctx.lineTo(80, scaleY + 10); 
-    ctx.moveTo(20, scaleY + 5);
-    ctx.lineTo(20, scaleY + 15);
-    ctx.moveTo(80, scaleY + 5);
-    ctx.lineTo(80, scaleY + 15);
-    ctx.strokeStyle = '#d4c4a8';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+      ctx.fillStyle = '#d4c4a8';
+      ctx.font = '14px "Cinzel", serif';
+      const scaleY = canvas.height - 50;
+      ctx.fillText('Scale: 1 inch = 2 yards', 20, scaleY);
+      ctx.beginPath();
+      ctx.moveTo(20, scaleY + 10);
+      ctx.lineTo(80, scaleY + 10); 
+      ctx.moveTo(20, scaleY + 5);
+      ctx.lineTo(20, scaleY + 15);
+      ctx.moveTo(80, scaleY + 5);
+      ctx.lineTo(80, scaleY + 15);
+      ctx.strokeStyle = '#d4c4a8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     // 4. Draw Tokens
     tokens.forEach(token => {
@@ -113,7 +115,7 @@ function MapCanvas({ onTokenDoubleClick }) {
       ctx.shadowBlur = 0; // Reset shadow
     });
 
-  }, [tokens, windowSize, bgImage]); 
+  }, [tokens, windowSize, bgImage, showScale]); 
 
   // Mouse Interaction Handlers
   const getMousePos = (e) => {

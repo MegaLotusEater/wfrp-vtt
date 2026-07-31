@@ -31,12 +31,20 @@ npm install
 Create a local `.env` file in the project root by copying `.env.example`.
 
 ```env
-VITE_GEMINI_API_KEY=your_real_key_here
+GEMINI_API_KEY=your_real_key_here
 ```
 
-The app currently reads this key directly in the browser during development. For a long-term production setup, the key should move behind a backend proxy.
+The browser no longer reads the Gemini key directly. The local Node proxy reads it from `.env` and the frontend talks to that proxy through `/api`.
 
-### 3. Start the dev server
+If you still have `VITE_GEMINI_API_KEY` from the older setup, the proxy will accept it temporarily, but `GEMINI_API_KEY` is the preferred name.
+
+### 3. Start the local API proxy
+
+```powershell
+npm run api
+```
+
+### 4. Start the dev server
 
 ```powershell
 npm run dev
@@ -51,6 +59,7 @@ http://localhost:5173
 ## Useful Scripts
 
 - `npm run dev` - start the local development server
+- `npm run api` - start the local Gemini proxy server
 - `npm run build` - build the app for production
 - `npm run preview` - preview a production build locally
 - `npm run lint` - run ESLint
@@ -67,6 +76,8 @@ http://localhost:5173
 - Keep the real `.env` file out of Git.
 - Commit only `.env.example` as the safe template.
 - If the Gemini key has ever been shared, rotate it before using the repo in a shared remote.
+- The frontend reads `/api/gm`, and the backend proxy is the only process that touches the Gemini key.
+- `npm run preview` still expects the local `npm run api` server to be running so the AI GM can respond.
 
 ## Notes
 
